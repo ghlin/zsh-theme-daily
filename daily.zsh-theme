@@ -20,7 +20,7 @@ ZSH_THEME_GIT_PROMPT_PREFIX=""
 ZSH_THEME_GIT_PROMPT_SUFFIX=""
 ZSH_THEME_GIT_PROMPT_DIRTY=" $PR_RED*$PR_NO_COLOUR"
 
-function theme_line() {
+function _theme_line() {
   if [ $? -eq 0 ]; then
     echo "%{$PR_BOLD_BLACK%}${(l:$COLUMNS::-:)}%{$PR_NO_COLOUR%}"
   else
@@ -28,7 +28,7 @@ function theme_line() {
   fi
 }
 
-function theme_git_info() {
+function _theme_git_info() {
   if [ -z "$(git_prompt_info)" ]; then
     echo ""
   elif [ -z "$(git_prompt_short_sha)" ]; then
@@ -38,20 +38,78 @@ function theme_git_info() {
   fi
 }
 
-function theme_ssh() {
+function _theme_ssh() {
   if [ "$SSH_CLIENT" != "" ]; then
     echo "${PR_BOLD_BLUE}(SSH!)${PR_NO_COLOUR} "
   fi
 }
 
-function theme_proxy() {
+function _theme_proxy() {
   if ! [[ -z "$HTTP_PROXY" && -z "$HTTPS_PROXY" && -z "$ALL_PROXY" ]]; then
     echo "${PR_BOLD_RED}(PROXY)${PR_NO_COLOUR} "
   fi
 }
 
-# PROMPT='$(theme_line) ...'
+_theme-zle-line-init() {
+    [[ $CONTEXT == start ]] || return 0
 
-PROMPT='%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(theme_ssh)$(theme_proxy)%3~$(theme_git_info)${PR_NO_COLOUR}
-%(?. .$PR_RED ! $PR_NOCOLOR)%(!.${PR_RED}#${PR_NO_COLOUR}.${PR_BLUE}>$PR_NO_COLOUR) ${PR_NO_COLOUR}'
+    # Start regular line editor
+    (( $+zle_bracketed_paste )) && print -r -n - $zle_bracketed_paste[1]
+    zle .recursive-edit
+    local -i ret=$?
+    (( $+zle_bracketed_paste )) && print -r -n - $zle_bracketed_paste[2]
+
+    # If we received EOT, we exit the shell
+    if [[ $ret == 0 && $KEYS == $'\4' ]]; then
+        _theme_prompt_compact=1
+        zle .reset-prompt
+        exit
+    fi
+
+    # Line edition is over. Shorten the current prompt.
+    _theme_prompt_compact=1
+
+    if [[ -z "${BUFFER// }" ]]; then
+      _theme_prompt_compact=2
+    else
+      _theme_prompt_compact=1
+      _theme_prompt_br=1
+    fi
+
+    zle .reset-prompt
+    unset _theme_prompt_compact
+
+    if (( ret )); then
+        # Ctrl-C
+        zle .send-break
+    else
+        # Enter
+        zle .accept-line
+    fi
+    return ret
+}
+zle -N zle-line-init _theme-zle-line-init
+
+function _theme_prompt() {
+  case "${_theme_prompt_compact}" in
+    1)
+      echo " ${PR_MAGENTA}\$${PR_NO_COLOUR} "
+      ;;
+    2)
+      echo ""
+      ;;
+    *)
+      if (( $_theme_prompt_br )); then
+        echo ""
+      fi
+
+      echo "%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(_theme_ssh)$(_theme_proxy)%3~$(_theme_git_info)${PR_NO_COLOUR}
+%(?. .$PR_RED ! $PR_NOCOLOR)%(!.${PR_RED}#${PR_NO_COLOUR}.${PR_BLUE}>$PR_NO_COLOUR) ${PR_NO_COLOUR}"
+      ;;
+  esac
+}
+
+# PROMPT='$(_theme_line) ...'
+
+PROMPT='$(_theme_prompt)'
 
