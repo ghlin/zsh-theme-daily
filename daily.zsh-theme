@@ -50,6 +50,10 @@ function _theme_proxy() {
   fi
 }
 
+function _theme_jobs() {
+  echo "%(1j.${PR_BOLD_RED}jobs:%j${PR_NO_COLOUR} .)"
+}
+
 _theme-zle-line-init() {
     [[ $CONTEXT == start ]] || return 0
 
@@ -60,10 +64,11 @@ _theme-zle-line-init() {
     (( $+zle_bracketed_paste )) && print -r -n - $zle_bracketed_paste[2]
 
     # If we received EOT, we exit the shell
-    if [[ $ret == 0 && $KEYS == $'\4' ]]; then
-        _theme_prompt_compact=1
-        zle .reset-prompt
-        exit
+    if [[ $ret == 0 && $KEYS == $'\4' && $(jobs | wc -l) -eq 0 ]]; then
+      _theme_prompt_compact=1
+
+      zle .reset-prompt
+      exit
     fi
 
     # Line edition is over. Shorten the current prompt.
@@ -103,8 +108,8 @@ function _theme_prompt() {
         echo ""
       fi
 
-      echo "%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(_theme_ssh)$(_theme_proxy)%3~$(_theme_git_info)${PR_NO_COLOUR}
-%(?. .$PR_RED ! $PR_NOCOLOR)%(!.${PR_RED}#${PR_NO_COLOUR}.${PR_BLUE}>$PR_NO_COLOUR) ${PR_NO_COLOUR}"
+      echo "%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(_theme_ssh)$(_theme_proxy)$(_theme_jobs)%3~$(_theme_git_info)${PR_NO_COLOUR}
+%(?. .$PR_RED ! $PR_NO_COLOUR)%(!.${PR_RED}#${PR_NOCOLOR}.${PR_BLUE}>$PR_NO_COLOUR) ${PR_NO_COLOUR}"
       ;;
   esac
 }
