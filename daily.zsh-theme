@@ -50,6 +50,13 @@ function _theme_proxy() {
   fi
 }
 
+function _theme_virt() {
+  local VIRT=$(systemd-detect-virt)
+  if [[ "$VIRT" != "" ]]; then
+    echo "${PR_BOLD_GREEN}(${VIRT} %m)${PR_NO_COLOUR} "
+  fi
+}
+
 function _theme_jobs() {
   echo "%(1j.${PR_BOLD_RED}jobs:%j${PR_NO_COLOUR} .)"
 }
@@ -108,7 +115,7 @@ function _theme_prompt() {
         echo ""
       fi
 
-      echo "%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(_theme_ssh)$(_theme_proxy)$(_theme_jobs)%3~$(_theme_git_info)${PR_NO_COLOUR}
+      echo "%(!.${PR_RED}.${PR_BLUE})$PR_NO_COLOUR %(!.${PR_RED}root$PR_NO_COLOUR.${PR_BOLD_BLUE}%n$PR_NO_COLOUR) $(_theme_ssh)$(_theme_virt)$(_theme_proxy)$(_theme_jobs)%3~$(_theme_git_info)${PR_NO_COLOUR}
 %(?. .$PR_RED ! $PR_NO_COLOUR)%(!.${PR_RED}#${PR_NOCOLOR}.${PR_BLUE}>$PR_NO_COLOUR) ${PR_NO_COLOUR}"
       ;;
   esac
