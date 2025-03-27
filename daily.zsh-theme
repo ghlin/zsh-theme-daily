@@ -52,7 +52,7 @@ function _theme_proxy() {
 
 function _theme_virt() {
   local VIRT=$(systemd-detect-virt)
-  if [[ "$VIRT" != "" ]]; then
+  if [[ "$VIRT" != "" && "$VIRT" != "none" ]]; then
     echo "${PR_BOLD_GREEN}(${VIRT} %m)${PR_NO_COLOUR} "
   fi
 }
